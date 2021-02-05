@@ -10,52 +10,76 @@ import java.util.Random;
 
 public class SlalomGameController extends JPanel implements KeyListener, ActionListener {
 
-    private final SlalomGameModel model;
-    private final GUI view;
+    private final SlalomGameModel MODEL;
+    private final GUI VIEW;
 
-    private final Timer timer = new Timer(15, this);
+    private final Timer TIMER = new Timer(1, this);
 
     private int distance;
     private int controller;
+    private int gateIndex = 0;
+
+    // This both values allow calculates other positions (next Gate, right flag etc.)
+    private Gate currentGateOne;
+    private int currentGatePositionY;
+    int leftBorder = 0;
+    int rightBorder = 0;
 
     public SlalomGameController(SlalomGameModel model, GUI view) {
-        this.model = model;
-        this.view = view;
+        this.MODEL = model;
+        this.VIEW = view;
     }
 
     public void play() {
-        view.initializeGUI(this, model.getGameBoardDimension());
-        model.setGates(initializeGates(150, 90, 280));
-        timer.start();
+        VIEW.initializeGUI(this, MODEL.getGameBoardDimension());
+        MODEL.setGates(initializeGates(150, 90, 280));
+        TIMER.start();
     }
 
     @Override
     public void paint(Graphics g) {
         int h = getHeight();
         int w = getWidth();
-        int s = model.getSkierSize();
-        g.setColor(Color.LIGHT_GRAY);
+        int s = MODEL.getSkierSize();
+        g.setColor(new Color(227, 238, 242));
         g.fillRect(0, 0, getWidth(), getHeight());
+
 
         // SKIER
         g.setColor(Color.DARK_GRAY);
-        g.fillRect(model.getSkierPosition(), h / 5 * 3, s, s);
+        g.fillRect(MODEL.getSkierPositionX(), MODEL.getSkierPositionY(), s, s);
         final int skisHeight = (h / 5 * 3) - (s * 3 / 4);
-        g.fillRect(model.getSkierPosition() + (s / 4), skisHeight, s / 6, s * 2);
-        g.fillRect(model.getSkierPosition() + (s - s / 4 - s / 6), skisHeight, s / 6, s * 2);
+        g.fillRect(MODEL.getSkierPositionX() + (s / 4), skisHeight, s / 6, s * 2);
+        g.fillRect(MODEL.getSkierPositionX() + (s - s / 4 - s / 6), skisHeight, s / 6, s * 2);
+
+
 
         // GATES
         paintGates(g);
         g.drawString(String.valueOf(distance), 500, 500);
 
-        // TEXT BAR
-        g.setColor(Color.DARK_GRAY);
-        g.drawLine(0, model.getGameBoardTextBarLine(), w, model.getGameBoardTextBarLine());
+        // DASHBOARD
+        paintDashboard(g, h, w);
 
-        g.setFont(new Font("Arial", Font.PLAIN, 16));
-        if (model.getStatus() != null) {
-            g.drawString(model.getStatus().getMessage(), w / 20,  h * 90 /100);
+
+    }
+
+    private void paintDashboard(Graphics g, int h, int w) {
+        int x = 0;
+        int y = MODEL.getGameBoardTextBarLine();
+        g.setColor(new Color(229, 25, 25));
+        g.drawLine(x, MODEL.getGameBoardTextBarLine(), w, MODEL.getGameBoardTextBarLine());
+        g.fillRect(x, y, w, h - y);
+
+        g.setColor(new Color(227, 238, 242));
+        g.setFont(new Font("Arial", Font.BOLD+Font.ITALIC, 22));
+        g.drawString("SCORE: " + MODEL.getScore(), w / 20, h * 90 / 100);
+        g.drawString("" + currentGatePositionY, w / 20, h * 95 / 100);
+        g.drawString("" + MODEL.getSkierPositionX(), w / 10, h * 95 / 100);
+        if (MODEL.getStatus() != null) {
+            g.drawString(MODEL.getStatus().getMessage(), w / 2,  h * 90 / 100);
         }
+
     }
 
     @Override
@@ -77,8 +101,8 @@ public class SlalomGameController extends JPanel implements KeyListener, ActionL
 
     public void moveSkier(Move move) {
         switch (move) {
-            case LEFT -> model.moveLeft();
-            case RIGHT -> model.moveRight();
+            case LEFT -> MODEL.moveLeft();
+            case RIGHT -> MODEL.moveRight();
         }
         repaint();
     }
@@ -89,8 +113,8 @@ public class SlalomGameController extends JPanel implements KeyListener, ActionL
         int n = maxGateSize - minGateSize + 1;
         int size;
         int position;
-        int minPositionLeft = model.getBound();
-        int maxPositionLeft = (int)model.getGameBoardDimension().getWidth() - maxGateSize;
+        int minPositionLeft = MODEL.getBound();
+        int maxPositionLeft = (int) MODEL.getGameBoardDimension().getWidth() - (maxGateSize + 2 * MODEL.getSkierSize());
         while(noOfGates > 0) {
             size = random.nextInt(n) + minGateSize;
             position = random.nextInt(maxPositionLeft - minPositionLeft) + minGateSize;
@@ -99,37 +123,32 @@ public class SlalomGameController extends JPanel implements KeyListener, ActionL
         }
         return gates;
     }
-    int gateIndex = 0;
+
+
+
     private void paintGates(Graphics g) {
-        List<Gate> gates = model.getGates();
-        int gatesDis = model.getGatesDistance();
-        int flagSize = model.getFlagSize();
+        List<Gate> gates = MODEL.getGates();
+        int gatesDis = MODEL.getGatesDistance();
+        int flagSize = MODEL.getFlagSize();
 
+        currentGatePositionY = controller;
+        int y2 = currentGatePositionY - gatesDis;
 
-
-        int y1 = controller;
-        int y2 = y1 - gatesDis;
-        
-        Gate gate1 = gates.get(gateIndex);
+        currentGateOne = gates.get(gateIndex);
         Gate gate2 = gates.get(gateIndex + 1);
 
-        if (controller == model.getGameBoardTextBarLine()) {
-            gate1 = gate2;
+        if (controller == MODEL.getGameBoardTextBarLine()) {
+            currentGateOne = gate2;
             gateIndex++;
             gate2 = gates.get(gateIndex);
             controller = y2;
         }
-
-
-
-
-
         // MAX 2 GATES ON BOARD
         // GATE 1
         g.setColor(Color.BLUE);
-        g.fillRect(gate1.getLeftPosition(), y1, flagSize, flagSize);
+        g.fillRect(currentGateOne.getLeftPosition(), currentGatePositionY, flagSize, flagSize);
         g.setColor(Color.RED);
-        g.fillRect(gate1.getRightPosition(), y1, flagSize, flagSize);
+        g.fillRect(currentGateOne.getRightPosition(), currentGatePositionY, flagSize, flagSize);
 
         // GATE 2
         g.setColor(Color.BLUE);
@@ -142,10 +161,32 @@ public class SlalomGameController extends JPanel implements KeyListener, ActionL
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if(e.getSource() == timer){
+        if(e.getSource() == TIMER){
             repaint();
             distance++;
             controller++;
+            scoreController();
+        }
+    }
+
+    private void scoreController() {
+        boolean passing = false;
+        if (currentGatePositionY == MODEL.getSkierPositionY()) {
+            leftBorder = currentGateOne.getLeftPosition() + MODEL.getSkierSize();
+            rightBorder = currentGateOne.getRightPosition();
+            passing = true;
+        }
+        if (currentGatePositionY == MODEL.getSkierPositionY() + MODEL.getSkierSize()) {
+            leftBorder = 0;
+            rightBorder = 0;
+        }
+        if (passing) {
+            if (MODEL.getSkierPositionX() >= leftBorder && MODEL.getSkierPositionX() <= rightBorder) {
+                MODEL.setScore(MODEL.getScore() + 100);
+            } else {
+                MODEL.setStatus(Status.MISSED_GATE);
+                MODEL.setScore(0);
+            }
         }
     }
 }

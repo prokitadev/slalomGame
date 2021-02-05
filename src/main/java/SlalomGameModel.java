@@ -8,7 +8,8 @@ public class SlalomGameModel {// ZAImplemoen Pattern Observer???? Byłoby najs
     private final int gameBoardTextBarLine = 560;
     private int bound = 50;
 
-    private int skierPosition = 588;
+    private int skierPositionX = 588;
+    private int skierPositionY = gameBoardHeight / 5 * 3;
     private int skierSize = 34;
 
     private List<Gate> gates;
@@ -22,31 +23,39 @@ public class SlalomGameModel {// ZAImplemoen Pattern Observer???? Byłoby najs
     }
 
     public void moveLeft() {
-        int newPosition = skierPosition + (-skierSize);
+        int newPosition = skierPositionX + (-skierSize);
         if (newPosition <= bound) {
             status = Status.NO_PLACE_TO_MOVE;
         } else {
-            skierPosition = newPosition;
+            skierPositionX = newPosition;
             status = Status.NULL;
         }
     }
 
     public void moveRight() {
-        int newPosition = skierPosition + (skierSize);
+        int newPosition = skierPositionX + (skierSize);
         if (newPosition >= gameBoardWidth - bound - skierSize) {
             status = Status.NO_PLACE_TO_MOVE;
         } else {
-            skierPosition = newPosition;
+            skierPositionX = newPosition;
             status = Status.NULL;
         }
     }
 
-    public int getSkierPosition() {
-        return skierPosition;
+    public int getSkierPositionX() {
+        return skierPositionX;
     }
 
-    public void setSkierPosition(int skierPosition) {
-        this.skierPosition = skierPosition;
+    public void setSkierPositionX(int skierPositionX) {
+        this.skierPositionX = skierPositionX;
+    }
+
+    public int getSkierPositionY() {
+        return skierPositionY;
+    }
+
+    public void setSkierPositionY(int skierPositionY) {
+        this.skierPositionY = skierPositionY;
     }
 
     public Dimension getGameBoardDimension() {
@@ -91,5 +100,17 @@ public class SlalomGameModel {// ZAImplemoen Pattern Observer???? Byłoby najs
 
     public Status getStatus() {
         return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public long getScore() {
+        return score;
+    }
+
+    public void setScore(long score) {
+        this.score = score;
     }
 }
